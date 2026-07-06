@@ -1,9 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PAY DAY — 30th Anniversary Edition</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f9f9f9; }
+#game { padding: 1rem; max-width: 680px; margin: 0 auto; }
+h1.game-title { font-size: 28px; font-weight: 600; color: #B22222; letter-spacing: -1px; text-align: center; margin-bottom: 4px; }
+.subtitle { text-align: center; font-size: 13px; color: #666; margin-bottom: 1rem; }
+.top-bar { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+.players-section { display: flex; gap: 6px; flex-wrap: wrap; }
+.player-chip { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 8px; border: 1.5px solid; font-size: 13px; font-weight: 500; background: white; }
+.player-chip.active { border-width: 2.5px; box-shadow: 0 0 0 2px currentColor; }
+.controls { display: flex; gap: 6px; align-items: center; }
+button { cursor: pointer; padding: 7px 14px; border-radius: 8px; border: 1px solid #ddd; background: white; color: #222; font-size: 13px; font-weight: 500; transition: background 0.15s; }
+button:hover { background: #f0f0f0; }
+button.primary { background: #B22222; color: white; border-color: #B22222; }
+button.mute-btn { min-width: 38px; padding: 7px 10px; font-size: 16px; }
+button.mute-btn.muted { background: #f0f0f0; color: #aaa; }
+button.primary:hover { background: #8B0000; }
+button:disabled { opacity: 0.4; cursor: default; }
+.board { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 1rem; }
+.space { background: white; border-radius: 5px; padding: 3px 2px; min-height: 72px; position: relative; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px solid; }
+.space .num { font-size: 9px; position: absolute; top: 2px; left: 3px; font-weight: 700; }
+.space .icon { font-size: 15px; margin-top: 13px; }
+.space .label { font-size: 8.5px; line-height: 1.2; font-weight: 500; }
+.space.payday    { border-color: #2e7d32; } .space.payday .num,.space.payday .label { color: #2e7d32; }
+.space.deal      { border-color: #1a5fb4; } .space.deal .num,.space.deal .label { color: #1a5fb4; }
+.space.mail      { border-color: #888; }    .space.mail .num,.space.mail .label { color: #555; }
+.space.buyer     { border-color: #c8900a; } .space.buyer .num,.space.buyer .label { color: #a06a00; }
+.space.lottery   { border-color: #6a0dad; } .space.lottery .num,.space.lottery .label { color: #6a0dad; }
+.space.sweepstakes{border-color:#d35400;}   .space.sweepstakes .num,.space.sweepstakes .label { color: #b34000; }
+.space.charity   { border-color: #1b7a3e; } .space.charity .num,.space.charity .label { color: #1b7a3e; }
+.space.casino    { border-color: #1a1a2e; } .space.casino .num,.space.casino .label { color: #1a1a2e; }
+.space.fun       { border-color: #c0156e; } .space.fun .num,.space.fun .label { color: #c0156e; }
+.space.start     { border-color: #B22222; } .space.start .num,.space.start .label { color: #B22222; }
+.space.groceries { border-color: #2e7d32; } .space.groceries .num,.space.groceries .label { color: #2e7d32; }
+.space.radio     { border-color: #0277bd; } .space.radio .num,.space.radio .label { color: #0277bd; }
+.space.yardsale  { border-color: #e64a19; } .space.yardsale .num,.space.yardsale .label { color: #bf360c; }
+.space.rest      { border-color: #7b5ea7; } .space.rest .num,.space.rest .label { color: #5c3d8f; }
+.space.tax       { border-color: #b71c1c; } .space.tax .num,.space.tax .label { color: #b71c1c; }
+.space.bonus     { border-color: #388e3c; } .space.bonus .num,.space.bonus .label { color: #388e3c; }
+.space.freebie   { border-color: #00796b; } .space.freebie .num,.space.freebie .label { color: #00796b; }
+.space.flat      { border-color: #888; }    .space.flat .num,.space.flat .label { color: #555; }
+
+@keyframes balance-pop {
+  0%   { opacity:0; transform: scale(0.8); }
+  40%  { opacity:1; transform: scale(1.06); }
+  100% { opacity:1; transform: scale(1); }
+}
+#balance-change { animation: balance-pop 0.3s ease-out; }
+
+@keyframes meeple-bounce {
+  0%   { transform: translateY(0) scale(1); }
+  30%  { transform: translateY(-7px) scale(1.15); }
+  60%  { transform: translateY(-3px) scale(1.05); }
+  80%  { transform: translateY(-5px) scale(1.1); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes meeple-land {
+  0%   { transform: translateY(-8px) scale(1.2); }
+  60%  { transform: translateY(2px) scale(0.95); }
+  100% { transform: translateY(0) scale(1); }
+}
+.meeple-hop  { animation: meeple-bounce 0.18s ease-in-out; }
+.meeple-land { animation: meeple-land 0.22s ease-out; }
+.space.highlight-active { box-shadow: 0 0 0 3px gold; }
+.pieces-container { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 1px; min-height: 22px; width: 100%; margin-top: auto; padding-bottom: 2px; }
+.info-panel { display: flex; gap: 8px; margin-bottom: 1rem; }
+.info-card { flex: 1; background: #f0f0f0; border-radius: 8px; padding: 8px 10px; }
+.info-card h3 { font-size: 11px; color: #666; margin-bottom: 3px; font-weight: 400; text-transform: uppercase; letter-spacing: .5px; }
+.info-card .val { font-size: 18px; font-weight: 600; color: #222; }
+
+.inventory-empty { font-size: 12px; color: #bbb; font-style: italic; }
+.deal-tag { display: inline-flex; align-items: center; gap: 5px; background: white; border: 1.5px solid #c8900a; border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 600; color: #a06a00; }
+.deal-tag .sell-price { color: #2e7d32; font-weight: 700; }
+.event-box { background: white; border: 1px solid #ddd; border-radius: 10px; padding: 10px 14px; margin-bottom: 1rem; min-height: 56px; }
+.event-box .ev-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.event-box .ev-desc { font-size: 12px; color: #555; line-height: 1.5; }
+.die { width: 40px; height: 40px; border-radius: 8px; background: white; border: 2px solid #ccc; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.money-log { font-size: 12px; color: #666; max-height: 56px; overflow-y: auto; line-height: 1.8; }
+.log-entry.plus { color: #2e7d32; }
+.log-entry.minus { color: #c01c28; }
+.setup { padding: 1.5rem; background: white; border-radius: 12px; }
+.setup h2 { font-size: 18px; font-weight: 600; margin-bottom: 1rem; }
+.setup label { font-size: 13px; color: #555; display: block; margin-bottom: 4px; }
+.setup select { width: 100%; margin-bottom: 1rem; padding: 8px; border-radius: 8px; border: 1px solid #ddd; background: white; color: #222; font-size: 14px; }
+.name-inputs { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1rem; }
+.name-inputs input { padding: 8px 10px; border-radius: 8px; border: 1px solid #ddd; background: white; color: #222; font-size: 13px; }
+.winner-screen { text-align: center; padding: 2rem 1rem; background: white; border-radius: 12px; }
+.winner-screen h2 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+.winner-screen p { color: #555; margin-bottom: 1.5rem; }
+.final-scores { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 300px; margin: 0 auto 1.5rem; }
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="setup-screen" class="setup">
+    <h1 class="game-title">PAY DAY</h1>
+    <p class="subtitle" style="margin-bottom:1.5rem">30th Anniversary Edition</p>
+    <h2>New game</h2>
+    <label>Number of players</label>
+    <select id="num-players"><option value="2">2 players</option><option value="3">3 players</option><option value="4">4 players</option></select>
+    <div class="name-inputs" id="name-inputs"></div>
+    <label>Months to play</label>
+    <select id="months-sel"><option value="1">1 month</option><option value="2">2 months</option><option value="3" selected>3 months</option><option value="4">4 months</option><option value="5">5 months</option></select>
+    <button class="primary" id="start-btn" style="width:100%;margin-top:4px;padding:10px">Start game ▶</button>
+  </div>
+
+  <div id="game-screen" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <h1 class="game-title" style="font-size:20px;margin-bottom:0">PAY DAY</h1>
+      <span id="month-label" style="font-size:12px;color:#888;font-weight:500">Month 1 of 3</span>
+    </div>
+    <div class="top-bar">
+      <div class="players-section" id="players-section"></div>
+      <div class="controls">
+        <button class="mute-btn" id="mute-btn" title="Mute/Unmute">🔊</button>
+      </div>
+    </div>
+    <div class="info-panel">
+      <div class="info-card"><h3>Cash</h3><div class="val" id="cur-cash">$0</div></div>
+      <div class="info-card"><h3>Loans</h3><div class="val" id="cur-loans">$0</div></div>
+      <div class="info-card"><h3>Jackpot</h3><div class="val" id="jackpot-display">$0</div></div>
+    </div>
+    <div class="event-box">
+      <div class="ev-title" id="event-title">Waiting to roll...</div>
+      <div class="ev-desc" id="event-desc">Tap Roll to take your turn.</div>
+      <div id="balance-change" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid #eee;display:none;align-items:center;gap:8px;font-size:13px;flex-wrap:wrap">
+        <span style="color:#888">Before:</span>
+        <span id="bal-before" style="font-weight:600;color:#555"></span>
+        <span id="bal-arrow" style="font-size:16px;font-weight:700"></span>
+        <span id="bal-change-amt" style="font-weight:700"></span>
+        <span style="color:#888">→ After:</span>
+        <span id="bal-after" style="font-weight:700;font-size:15px"></span>
+      </div>
+    </div>
+    <div id="top-roll-bar" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;padding:8px 10px;background:#f0f0f0;border-radius:10px">
+      <div style="display:flex;gap:4px" id="dice-area">
+        <div class="die" id="die1-display">🎲</div>
+      </div>
+      <button class="primary" id="roll-btn" style="flex:1">Roll</button>
+    </div>
+    <div class="board" id="board"></div>
+    <div style="display:flex;gap:6px;margin-bottom:1rem;margin-top:1rem">
+      <button id="loan-btn" style="flex:1">💳 Borrow $1k</button>
+      <button id="repay-btn" style="flex:1">✅ Repay</button>
+      <button id="save-btn" style="flex:1;background:#0277bd;color:white;border-color:#0277bd">💾 Save</button>
+      <button id="new-game-btn" class="primary" style="flex:1">↩ New game</button>
+    </div>
+  </div>
+
+  <div id="winner-screen" class="winner-screen" style="display:none">
+    <h1 class="game-title">PAY DAY</h1>
+    <h2 id="winner-title">Winner!</h2>
+    <p id="winner-sub"></p>
+    <div class="final-scores" id="final-scores"></div>
+    <button class="primary" id="play-again-btn" style="padding:10px 28px;font-size:15px">↩ Play again</button>
+  </div>
+</div>
+
+<script>
 // ============================================================
 // MULTIPLAYER WEBSOCKET CONNECTION
 // ============================================================
 let ws = null;
 let playerId = null;
-let myPlayerIndex = null;
 
 function connectToServer() {
   const host = window.location.hostname;
@@ -23,24 +187,13 @@ function connectToServer() {
     const msg = JSON.parse(event.data);
     console.log('📨 Server message:', msg.type);
     
-    if (msg.type === 'init') {
-      playerId = msg.playerId;
-      console.log('Player ID:', playerId);
-    }
-    
     if (msg.type === 'playerJoined') {
       console.log('Players in game:', msg.players);
       setEvent('🎮 Multiplayer', msg.players.length + ' players connected!');
     }
     
     if (msg.type === 'gameStateSync') {
-      // Another player's game state — update your board view
       syncRemoteGameState(msg.data);
-    }
-    
-    if (msg.type === 'playerLeft') {
-      console.log('Players remaining:', msg.players);
-      setEvent('⚠️ Player Disconnected', msg.players.length + ' players left');
     }
   };
   
@@ -56,7 +209,6 @@ function syncGameState() {
 }
 
 function syncRemoteGameState(remoteG) {
-  // Update board with remote player state
   console.log('🔄 Updating from remote state');
   if (remoteG.players) {
     G.players = remoteG.players;
@@ -70,3 +222,321 @@ function syncRemoteGameState(remoteG) {
   }
 }
 // ============================================================
+
+const COLORS=['#1a5fb4','#c01c28','#2e7d32','#a020a0'];
+const COLOR_NAMES=['Blue','Red','Green','Purple'];
+
+function showScreen(name){
+  ['setup-screen','game-screen','winner-screen'].forEach(id=>{
+    document.getElementById(id).style.display=(id===name)?'block':'none';
+  });
+  window.scrollTo(0,0);
+}
+
+function goToSetup(){
+  document.getElementById('num-players').value='2';
+  document.getElementById('months-sel').value='3';
+  setupNameInputs();
+  showScreen('setup-screen');
+}
+
+function makeMeeple(color, size){
+  size = size || 20;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="10" cy="4" r="3.2" fill="${color}"/>
+    <path d="M4 19 Q4 13 7 12 Q8.5 11.5 10 12 Q11.5 11.5 13 12 Q16 13 16 19Z" fill="${color}"/>
+    <path d="M7 12 Q5 14 3.5 18 L6 18 Q7 15 8 13Z" fill="${color}"/>
+    <path d="M13 12 Q15 14 16.5 18 L14 18 Q13 15 12 13Z" fill="${color}"/>
+    <circle cx="10" cy="4" r="3.2" fill="none" stroke="white" stroke-width="0.8" opacity="0.5"/>
+  </svg>`;
+}
+
+const SPACES=[
+  {id:0,  type:'start',      label:'START',                               icon:'🏠'},
+  {id:1,  type:'mail',       label:'Mail',                                icon:'✉️'},
+  {id:2,  type:'deal',       label:'DEAL',                                icon:'📋'},
+  {id:3,  type:'tax',        label:'Tax - Pay $200',                      icon:'🏛️', effect:'tax', amount:200},
+  {id:4,  type:'deal',       label:'DEAL',                                icon:'📋'},
+  {id:5,  type:'mail',       label:'Mail',                                icon:'✉️'},
+  {id:6,  type:'buyer',      label:'Found a Buyer!',                      icon:'🤝', effect:'buyer'},
+  {id:7,  type:'deal',       label:'DEAL',                                icon:'📋'},
+  {id:8,  type:'mail',       label:'Mail',                                icon:'✉️'},
+  {id:9,  type:'deal',       label:'DEAL',                                icon:'📋'},
+  {id:10, type:'buyer',      label:'Found a Buyer!',                      icon:'🤝', effect:'buyer'},
+  {id:11, type:'mail',       label:'Mail',                                icon:'✉️'},
+  {id:12, type:'deal',       label:'DEAL',                                icon:'📋'},
+  {id:13, type:'buyer',      label:'Found a Buyer!',                      icon:'🤝', effect:'buyer'},
+  {id:14, type:'mail',       label:'Mail',                                icon:'✉️'},
+  {id:15, type:'deal',       label:'DEAL',                                icon:'📋'},
+  {id:16, type:'buyer',      label:'Found a Buyer!',                      icon:'🤝', effect:'buyer'},
+  {id:17, type:'mail',       label:'Mail',                                icon:'✉️'},
+  {id:18, type:'deal',       label:'DEAL',                                icon:'📋'},
+  {id:19, type:'buyer',      label:'Found a Buyer!',                      icon:'🤝', effect:'buyer'},
+  {id:20, type:'mail',       label:'Mail',                                icon:'✉️'},
+  {id:21, type:'deal',       label:'DEAL',                                icon:'📋'},
+  {id:22, type:'buyer',      label:'Found a Buyer!',                      icon:'🤝', effect:'buyer'},
+  {id:23, type:'mail',       label:'Mail',                                icon:'✉️'},
+  {id:24, type:'deal',       label:'DEAL',                                icon:'📋'},
+  {id:25, type:'buyer',      label:'Found a Buyer!',                      icon:'🤝', effect:'buyer'},
+  {id:26, type:'mail',       label:'Mail',                                icon:'✉️'},
+  {id:27, type:'deal',       label:'DEAL',                                icon:'📋'},
+  {id:28, type:'buyer',      label:'Found a Buyer!',                      icon:'🤝', effect:'buyer'},
+  {id:29, type:'mail',       label:'Mail',                                icon:'✉️'},
+  {id:30, type:'deal',       label:'DEAL',                                icon:'📋'},
+  {id:31, type:'payday',     label:'PAY DAY!',                            icon:'💵'},
+];
+
+const DEAL_CARDS=[
+  {name:'Concert Tickets',buy:250,sell:550},{name:'Sports Memorabilia',buy:350,sell:800},
+  {name:'Antique Chair',buy:175,sell:450},{name:'Comic Books',buy:80,sell:300},
+  {name:'Vintage Wine',buy:500,sell:1100},{name:'Collectible Coins',buy:300,sell:700},
+];
+
+let G={};
+function fmt(n){return '$'+Math.abs(n).toLocaleString();}
+
+function initGame(){
+  const np=parseInt(document.getElementById('num-players').value);
+  const months=parseInt(document.getElementById('months-sel').value);
+  const names=[];
+  for(let i=0;i<np;i++){
+    const v=document.getElementById('pname-'+i)?.value.trim();
+    names.push(v||COLOR_NAMES[i]+' player');
+  }
+  G={
+    players:names.map((n,i)=>({name:n,cash:2000,loans:0,pos:0,deals:[],color:COLORS[i],idx:i})),
+    cur:0,month:1,totalMonths:months,jackpot:1000,rolling:false,log:[],
+  };
+  showScreen('game-screen');
+  connectToServer();
+  renderBoard(); renderPlayers(); updateInfo();
+  setEvent(G.players[0].name+"'s turn",'Tap Roll to move.');
+}
+
+function renderBoard(){
+  const board=document.getElementById('board');
+  board.innerHTML='';
+  SPACES.forEach(s=>{
+    const div=document.createElement('div');
+    div.className='space '+s.type; div.id='space-'+s.id;
+    let inner=s.id>0?`<span class="num">${s.id}</span>`:
+'';
+    inner+=`<span class="icon">${s.icon}</span><span class="label">${s.label}</span>`;
+    inner+=`<div class="pieces-container" id="pieces-${s.id}"></div>`;
+    div.innerHTML=inner; board.appendChild(div);
+  });
+  placePieces();
+}
+
+function placePieces(){
+  const byPos={};
+  G.players.forEach(p=>{if(!byPos[p.pos])byPos[p.pos]=[];byPos[p.pos].push(p);});
+  document.querySelectorAll('[id^="pieces-"]').forEach(el=>el.innerHTML='');
+  Object.keys(byPos).forEach(pos=>{
+    const c=document.getElementById('pieces-'+pos);
+    if(!c)return;
+    byPos[pos].forEach(p=>{
+      const w=document.createElement('div');
+      w.setAttribute('data-player',p.idx);
+      w.title=p.name;
+      w.innerHTML=makeMeeple(p.color,28);
+      c.appendChild(w);
+    });
+  });
+}
+
+function renderPlayers(){
+  const sec=document.getElementById('players-section'); sec.innerHTML='';
+  G.players.forEach((p,i)=>{
+    const chip=document.createElement('div');
+    chip.className='player-chip'+(i===G.cur?' active':'');
+    chip.style.borderColor=p.color; chip.style.color=p.color;
+    chip.innerHTML=makeMeeple(p.color,22)+`<span>${p.name}</span>`;
+    sec.appendChild(chip);
+  });
+}
+
+function updateInfo(){
+  const p=G.players[G.cur];
+  document.getElementById('cur-cash').textContent=fmt(p.cash);
+  const loanEl=document.getElementById('cur-loans');
+  if(loanEl) loanEl.textContent=p.loans>0?'-'+fmt(p.loans):'$0';
+  document.getElementById('jackpot-display').textContent=fmt(G.jackpot);
+  document.getElementById('month-label').textContent='Month '+G.month+' of '+G.totalMonths;
+}
+
+function addLog(msg,type){
+  G.log.unshift({msg,type});
+}
+function setEvent(title,desc){
+  document.getElementById('event-title').textContent=title;
+  document.getElementById('event-desc').textContent=desc;
+}
+
+function showBalance(before, after){
+  const diff = after - before;
+  if(diff === 0) return;
+  const el = document.getElementById('balance-change');
+  document.getElementById('bal-before').textContent = fmt(before);
+  document.getElementById('bal-arrow').textContent = diff > 0 ? '＋' : '－';
+  document.getElementById('bal-change-amt').textContent = fmt(Math.abs(diff));
+  document.getElementById('bal-after').textContent = fmt(after);
+  el.style.display = 'flex';
+}
+
+function hideBalance(){
+  document.getElementById('balance-change').style.display = 'none';
+}
+
+function rollDie(){return Math.floor(Math.random()*6)+1;}
+const DIE_FACES=['','1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣'];
+
+function doRoll(){
+  if(G.rolling)return;
+  SFX.diceRoll();
+  G.rolling=true; document.getElementById('roll-btn').disabled=true;
+  let count=0;
+  const interval=setInterval(()=>{
+    const dv=DIE_FACES[rollDie()]; document.getElementById('die1-display').textContent=dv;
+    count++;
+    if(count>=8){clearInterval(interval);const roll=rollDie();const dface=DIE_FACES[roll]; document.getElementById('die1-display').textContent=dface; movePlayer(roll); return;}
+  },80);
+}
+
+function movePlayer(roll){
+  const p = G.players[G.cur];
+  const oldPos = p.pos;
+  const finalPos = (oldPos + roll) % 32;
+  const passedPayday = finalPos <= oldPos && oldPos !== 0;
+
+  addLog(p.name+' rolled '+roll,'');
+  document.getElementById('roll-btn').disabled = true;
+
+  let step = oldPos;
+  let stepsLeft = roll;
+
+  function doStep(){
+    if(stepsLeft === 0){
+      p.pos = finalPos;
+      placePieces();
+      setTimeout(()=>{
+        if(passedPayday){ doPayDay(); } else { landOn(finalPos); }
+      }, 500);
+      syncGameState();
+      return;
+    }
+    step = (step + 1) % 32;
+    stepsLeft--;
+    placePieces();
+    setTimeout(doStep, 200);
+  }
+
+  setTimeout(doStep, 200);
+}
+
+function doPayDay(){
+  const p=G.players[G.cur];
+  const _pb=p.cash;
+  p.cash+=2000;
+  addLog('💵 '+p.name+' PAYDAY +$2,000','plus');
+  showBalance(_pb,p.cash);
+  updateInfo();
+  G.month++;
+  if(G.month>G.totalMonths){endGame();return;}
+  advanceTurn();
+  syncGameState();
+}
+
+function landOn(pos){
+  const s=SPACES[pos]; const p=G.players[G.cur];
+  if(s.type==='payday'){doPayDay();return;}
+  if(s.type==='deal'){
+    const card=DEAL_CARDS[Math.floor(Math.random()*DEAL_CARDS.length)];
+    if(p.cash>=card.buy){
+      p.deals.push(card);
+      p.cash-=card.buy;
+      setEvent('📋 Deal!', card.name+' purchased for '+fmt(card.buy));
+      showBalance(p.cash+card.buy,p.cash);
+    }
+  }
+  if(s.type==='mail'){
+    p.cash+=Math.random()>0.5?100:-50;
+    setEvent('📬 Mail!','You received mail!');
+  }
+  if(s.type==='buyer' && p.deals.length>0){
+    const deal=p.deals.pop();
+    const profit=deal.sell-deal.buy;
+    p.cash+=deal.sell;
+    addLog(p.name+' sold '+deal.name+' for '+fmt(deal.sell),'plus');
+    setEvent('🤝 Buyer Found!','Sold '+deal.name+' for '+fmt(deal.sell));
+    showBalance(p.cash-profit,p.cash);
+  }
+  if(s.effect==='tax'){
+    p.cash-=s.amount;
+    setEvent('🏛️ Tax!','Paid '+fmt(s.amount));
+  }
+  updateInfo();
+  nextTurn();
+  syncGameState();
+}
+
+function nextTurn(){
+  document.getElementById('roll-btn').disabled=false;
+  G.cur=(G.cur+1)%G.players.length;
+  G.rolling=false;
+  setEvent(G.players[G.cur].name+"'s turn",'Tap Roll to move.');
+}
+
+function advanceTurn(){
+  G.cur=(G.cur+1)%G.players.length;
+  G.rolling=false;
+  setEvent(G.players[G.cur].name+"'s turn",'Tap Roll to move.');
+  document.getElementById('roll-btn').disabled=false;
+}
+
+function endGame(){
+  const winner=G.players.reduce((a,b)=>a.cash>b.cash?a:b);
+  document.getElementById('winner-title').textContent=winner.name+' Wins!';
+  document.getElementById('winner-sub').textContent='Final cash: '+fmt(winner.cash);
+  const scores=G.players.map(p=>`<div><strong>${p.name}</strong>: ${fmt(p.cash)}</div>`).join('');
+  document.getElementById('final-scores').innerHTML=scores;
+  showScreen('winner-screen');
+}
+
+function setupNameInputs(){
+  const np=parseInt(document.getElementById('num-players').value);
+  const container=document.getElementById('name-inputs');
+  container.innerHTML='';
+  for(let i=0;i<np;i++){
+    const input=document.createElement('input');
+    input.type='text';
+    input.id='pname-'+i;
+    input.placeholder=COLOR_NAMES[i]+' player';
+    input.style.borderColor=COLORS[i];
+    container.appendChild(input);
+  }
+}
+
+const AC = new (window.AudioContext || window.webkitAudioContext)();
+let G_MUTED = false;
+
+function makeGain(vol, t){ const g = AC.createGain(); g.gain.setValueAtTime(vol, t); g.connect(AC.destination); return g; }
+function sine(freq, t, dur, vol, slide){ const o = AC.createOscillator(); const g = makeGain(vol, t); o.type='sine'; o.frequency.setValueAtTime(freq, t); if(slide) o.frequency.linearRampToValueAtTime(slide, t+dur); g.gain.exponentialRampToValueAtTime(0.001, t+dur); o.connect(g); o.start(t); o.stop(t+dur); }
+function thud(t, vol){ const o = AC.createOscillator(); const g = makeGain(vol||0.5, t); o.type='sine'; o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(40, t+0.15); g.gain.exponentialRampToValueAtTime(0.001, t+0.18); o.connect(g); o.start(t); o.stop(t+0.2); }
+
+const SFX = {
+  diceRoll: ()=>{ sine(440, AC.currentTime, 0.2, 0.3); sine(600, AC.currentTime+0.1, 0.15, 0.2); },
+};
+
+document.getElementById('num-players').addEventListener('change', setupNameInputs);
+document.getElementById('start-btn').addEventListener('click', initGame);
+document.getElementById('roll-btn').addEventListener('click', doRoll);
+document.getElementById('new-game-btn').addEventListener('click', goToSetup);
+document.getElementById('play-again-btn').addEventListener('click', goToSetup);
+document.getElementById('loan-btn').addEventListener('click', ()=>{ G.players[G.cur].loans+=1000; updateInfo(); syncGameState(); });
+document.getElementById('repay-btn').addEventListener('click', ()=>{ G.players[G.cur].cash-=G.players[G.cur].loans; G.players[G.cur].loans=0; updateInfo(); syncGameState(); });
+
+goToSetup();
+</script>
+</body>
+</html>
