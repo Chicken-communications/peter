@@ -279,13 +279,28 @@ function syncGameState() {
 }
 
 function syncRemoteGameState(remoteG) {
-  // Update board with remote player state
-  if (remoteG.players) {
-    G.players = remoteG.players;
-    renderPlayers();
-    placePieces();
-  }
+  if (!remoteG) return;
+  
+  // 1. Sync all core game variables
+  if (remoteG.players) G.players = remoteG.players;
+  if (remoteG.cur !== undefined) G.cur = remoteG.cur;
+  if (remoteG.month) G.month = remoteG.month;
+  if (remoteG.jackpot !== undefined) G.jackpot = remoteG.jackpot;
+  if (remoteG.log) G.log = remoteG.log;
+
+  // 2. Visually update the board and players
+  renderPlayers();
+  placePieces();
+  
+  // 3. Visually update the log panel
+  document.getElementById('log').innerHTML = G.log.slice(0,8).map(e => 
+    `<div class="log-entry ${e.type||''}">${e.msg}</div>`
+  ).join('');
+
+  // 4. Update the text UI, but pass "true" to prevent an infinite WebSocket loop
+  updateInfo(true);
 }
+
 // ============================================================
 const COLORS=['#1a5fb4','#c01c28','#2e7d32','#a020a0'];
 const COLOR_NAMES=['Blue','Red','Green','Purple'];
@@ -772,7 +787,7 @@ function renderPlayers(){
   });
 }
 
-function updateInfo(){
+function updateInfo(preventSync = false){
   const p=G.players[G.cur];
 
   document.getElementById('cur-cash').textContent=fmt(p.cash);
@@ -782,6 +797,11 @@ function updateInfo(){
   document.getElementById('month-label').textContent='Month '+G.month+' of '+G.totalMonths;
   if(G.players) renderInventory();
 
+  // Broadcast the new state to other players, unless this update 
+  // was triggered by receiving a state from the server.
+  if (!preventSync) {
+    syncGameState();
+  }
 }
 
 function addLog(msg,type){
@@ -1359,6 +1379,7 @@ function advanceTurn(){
   G.rolling=false;
   G.cur=(G.cur+1)%G.players.length;
   const p=G.players[G.cur];
+  
   if(p.skipTurn){
     p.skipTurn=false;
     addLog(p.name+' skips turn (resting)','');
@@ -1367,11 +1388,15 @@ function advanceTurn(){
     renderPlayers(); updateInfo();
     setEvent('⛪ Skipped!',p.name+' is resting (On the Seventh Day God Rested!) and skips their turn. '+G.players[G.cur].name+"'s turn — tap Roll!");
     document.getElementById('roll-btn').disabled=false; document.getElementById('roll-btn-b').disabled=false;
+    syncGameState();
     return;
   }
+  
   renderPlayers(); updateInfo();
   document.getElementById('roll-btn').disabled=false; document.getElementById('roll-btn-b').disabled=false;
   setEvent(p.name+"'s turn",'Tap Roll to move.');
+  
+  syncGameState();
 }
 
 function nextTurn(){
