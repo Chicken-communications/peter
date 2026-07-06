@@ -828,12 +828,12 @@ function updateInfo(preventSync = false){
 }
 
 function applyTurnLock() {
-  // If the user hasn't claimed a player yet, don't lock anything (allows local pass-and-play)
+  // If the user hasn't claimed a player yet, don't lock anything
   if (myPlayerIndex === null) return;
 
   const isMyTurn = (G.cur === myPlayerIndex);
 
-  // List of buttons that should ONLY be clickable by the active player
+  // Buttons that should ONLY be active during your turn
   const buttonsToLock = [
     'roll-btn', 'roll-btn-b', 
     'loan-btn', 'repay-btn', 
@@ -845,14 +845,26 @@ function applyTurnLock() {
   buttonsToLock.forEach(id => {
     const btn = document.getElementById(id);
     if (btn) {
-      // If it's not your turn, force disable the button.
-      // If it IS your turn, we leave it alone (because game logic like 
-      // the dice rolling animation might have intentionally disabled it).
       if (!isMyTurn) {
+        // Lock the button and dim it
         btn.disabled = true;
+        btn.style.opacity = '0.4';
+      } else {
+        // Unlock the button (unless the dice are actively rolling)
+        if (!G.rolling) {
+          btn.disabled = false;
+          btn.style.opacity = '1';
+        }
       }
     }
   });
+
+  // Visual status feedback in the event box
+  if (!isMyTurn && !G.rolling) {
+    document.getElementById('event-title').textContent = "⏳ Waiting for opponent...";
+    document.getElementById('event-desc').textContent = `It is currently ${G.players[G.cur].name}'s turn. Your controls are locked.`;
+  }
+}
 
   // Change the event text so the player knows they are waiting
   if (!isMyTurn && !G.rolling) {
