@@ -868,6 +868,13 @@ function applyTurnLock() {
   }
 }
 
+  // Visual status feedback in the event box
+  if (!isMyTurn && !G.rolling) {
+    document.getElementById('event-title').textContent = "⏳ Waiting for opponent...";
+    document.getElementById('event-desc').textContent = `It is currently ${G.players[G.cur].name}'s turn. Your controls are locked.`;
+  }
+}
+
 function applyTurnLock() {
   // If the user hasn't claimed a player yet, don't lock anything
   if (myPlayerIndex === null) return;
