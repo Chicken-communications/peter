@@ -782,7 +782,28 @@ function renderPlayers(){
     const chip=document.createElement('div');
     chip.className='player-chip'+(i===G.cur?' active':'');
     chip.style.borderColor=p.color; chip.style.color=p.color;
+    
+    // Highlight the chip if it belongs to this local client
+    if (myPlayerIndex === i) {
+      chip.style.background = '#f0f8ff';
+    }
+
+    // Add pointer cursor and tooltip if they haven't claimed a player yet
+    chip.style.cursor = myPlayerIndex === null ? 'pointer' : 'default';
+    if (myPlayerIndex === null) chip.title = "Click to claim this player!";
+
     chip.innerHTML=makeMeeple(p.color,22)+`<span>${p.name}</span>`;
+    
+    // Claiming logic
+    chip.addEventListener('click', () => {
+      if (myPlayerIndex === null) {
+        myPlayerIndex = i;
+        alert(`You are now playing as ${p.name}!`);
+        renderPlayers(); // Re-render to show the highlight
+        updateInfo();    // Re-run info to lock buttons if it's not your turn
+      }
+    });
+
     sec.appendChild(chip);
   });
 }
@@ -797,10 +818,46 @@ function updateInfo(preventSync = false){
   document.getElementById('month-label').textContent='Month '+G.month+' of '+G.totalMonths;
   if(G.players) renderInventory();
 
-  // Broadcast the new state to other players, unless this update 
-  // was triggered by receiving a state from the server.
+  // Apply the UI lock based on whose turn it is
+  applyTurnLock();
+
+  // Broadcast the new state to other players
   if (!preventSync) {
     syncGameState();
+  }
+}
+
+function applyTurnLock() {
+  // If the user hasn't claimed a player yet, don't lock anything (allows local pass-and-play)
+  if (myPlayerIndex === null) return;
+
+  const isMyTurn = (G.cur === myPlayerIndex);
+
+  // List of buttons that should ONLY be clickable by the active player
+  const buttonsToLock = [
+    'roll-btn', 'roll-btn-b', 
+    'loan-btn', 'repay-btn', 
+    'end-turn-btn',
+    'lottery-btn', 'lottery-btn-b', 
+    'deal-pass-btn'
+  ];
+
+  buttonsToLock.forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      // If it's not your turn, force disable the button.
+      // If it IS your turn, we leave it alone (because game logic like 
+      // the dice rolling animation might have intentionally disabled it).
+      if (!isMyTurn) {
+        btn.disabled = true;
+      }
+    }
+  });
+
+  // Change the event text so the player knows they are waiting
+  if (!isMyTurn && !G.rolling) {
+    document.getElementById('event-title').textContent = "Waiting...";
+    document.getElementById('event-desc').textContent = "It is " + G.players[G.cur].name + "'s turn.";
   }
 }
 
