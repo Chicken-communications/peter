@@ -223,6 +223,70 @@ button:disabled { opacity: 0.4; cursor: default; }
 </div>
 
 <script>
+// ============================================================
+// MULTIPLAYER WEBSOCKET CONNECTION
+// ============================================================
+let ws = null;
+let playerId = null;
+let myPlayerIndex = null;
+
+function connectToServer() {
+  const host = window.location.hostname;
+  const port = window.location.port || '3000';
+  const wsUrl = `ws://${host}:${port}`;
+  
+  console.log(`🔗 Connecting to ${wsUrl}`);
+  ws = new WebSocket(wsUrl);
+  
+  ws.onopen = () => {
+    console.log('✅ Connected to server');
+    const playerName = document.getElementById('pname-0')?.value || 'Player 1';
+    ws.send(JSON.stringify({ type: 'join', roomId: 'default', playerName }));
+  };
+  
+  ws.onmessage = (event) => {
+    const msg = JSON.parse(event.data);
+    
+    if (msg.type === 'init') {
+      playerId = msg.playerId;
+      console.log('Player ID:', playerId);
+    }
+    
+    if (msg.type === 'playerJoined') {
+      console.log('Players in game:', msg.players);
+      setEvent('🎮 Multiplayer', msg.players.length + ' players connected!');
+    }
+    
+    if (msg.type === 'gameStateSync') {
+      // Another player's game state — update your board view
+      syncRemoteGameState(msg.data);
+    }
+    
+    if (msg.type === 'playerLeft') {
+      console.log('Players remaining:', msg.players);
+      setEvent('⚠️ Player Disconnected', msg.players.length + ' players left');
+    }
+  };
+  
+  ws.onerror = (err) => console.error('❌ WebSocket error:', err);
+  ws.onclose = () => console.log('🔌 Disconnected from server');
+}
+
+function syncGameState() {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'gameStateUpdate', data: G }));
+  }
+}
+
+function syncRemoteGameState(remoteG) {
+  // Update board with remote player state
+  if (remoteG.players) {
+    G.players = remoteG.players;
+    renderPlayers();
+    placePieces();
+  }
+}
+// ============================================================
 const COLORS=['#1a5fb4','#c01c28','#2e7d32','#a020a0'];
 const COLOR_NAMES=['Blue','Red','Green','Purple'];
 
@@ -659,6 +723,7 @@ function initGame(){
     cur:0,month:1,totalMonths:months,jackpot:1000,rolling:false,log:[],
   };
   showScreen('game-screen');
+  connectToServer(); // Start multiplayer sync
   renderBoard(); renderPlayers(); updateInfo();
   setEvent(G.players[0].name+"'s turn",'Tap Roll to move.');
 }
