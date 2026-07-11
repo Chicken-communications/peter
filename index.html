@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -45,14 +46,12 @@ button:disabled { opacity: 0.4; cursor: default; }
 .space.bonus     { border-color: #388e3c; } .space.bonus .num,.space.bonus .label { color: #388e3c; }
 .space.freebie   { border-color: #00796b; } .space.freebie .num,.space.freebie .label { color: #00796b; }
 .space.flat      { border-color: #888; }    .space.flat .num,.space.flat .label { color: #555; }
-
 @keyframes balance-pop {
   0%   { opacity:0; transform: scale(0.8); }
   40%  { opacity:1; transform: scale(1.06); }
   100% { opacity:1; transform: scale(1); }
 }
 #balance-change { animation: balance-pop 0.3s ease-out; }
-
 @keyframes meeple-bounce {
   0%   { transform: translateY(0) scale(1); }
   30%  { transform: translateY(-7px) scale(1.15); }
@@ -73,7 +72,6 @@ button:disabled { opacity: 0.4; cursor: default; }
 .info-card { flex: 1; background: #f0f0f0; border-radius: 8px; padding: 8px 10px; }
 .info-card h3 { font-size: 11px; color: #666; margin-bottom: 3px; font-weight: 400; text-transform: uppercase; letter-spacing: .5px; }
 .info-card .val { font-size: 18px; font-weight: 600; color: #222; }
-
 .inventory-empty { font-size: 12px; color: #bbb; font-style: italic; }
 .deal-tag { display: inline-flex; align-items: center; gap: 5px; background: white; border: 1.5px solid #c8900a; border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 600; color: #a06a00; margin: 2px; }
 .deal-tag .sell-price { color: #2e7d32; font-weight: 700; }
@@ -121,7 +119,6 @@ button:disabled { opacity: 0.4; cursor: default; }
       <button id="delete-save-btn" style="width:100%;margin-top:6px;padding:6px;font-size:12px;color:#c01c28;border:1px solid #c01c28;border-radius:8px;background:white;cursor:pointer">🗑 Delete saved game</button>
     </div>
   </div>
-
   <div id="game-screen" style="display:none">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <h1 class="game-title" style="font-size:20px;margin-bottom:0">PAY DAY</h1>
@@ -153,7 +150,7 @@ button:disabled { opacity: 0.4; cursor: default; }
     <div class="event-box">
       <div class="ev-title" id="event-title">Waiting to roll...</div>
       <div class="ev-desc" id="event-desc">Tap Roll to take your turn.</div>
-      <div id="balance-change" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid #eee;display:none;align-items:center;gap:8px;font-size:13px;flex-wrap:wrap">
+      <div id="balance-change" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid #eee;align-items:center;gap:8px;font-size:13px;flex-wrap:wrap">
         <span style="color:#888">Before:</span>
         <span id="bal-before" style="font-weight:600;color:#555"></span>
         <span id="bal-arrow" style="font-size:16px;font-weight:700"></span>
@@ -203,7 +200,6 @@ button:disabled { opacity: 0.4; cursor: default; }
       <button class="primary" id="roll-btn-b" style="flex:1">Roll</button>
       <button class="primary" id="lottery-btn-b" style="display:none;flex:1;background:#6a0dad;border-color:#6a0dad">🎰 Roll for Lottery!</button>
     </div>
-
     <div style="display:flex;gap:6px;margin-bottom:1rem">
       <button id="loan-btn" style="flex:1">💳 Borrow $1k</button>
       <button id="repay-btn" style="flex:1">✅ Repay</button>
@@ -211,7 +207,6 @@ button:disabled { opacity: 0.4; cursor: default; }
       <button id="new-game-btn" class="primary" style="flex:1">↩ New game</button>
     </div>
   </div>
-
   <div id="winner-screen" class="winner-screen" style="display:none">
     <h1 class="game-title">PAY DAY</h1>
     <h2 id="winner-title">Winner!</h2>
@@ -221,7 +216,6 @@ button:disabled { opacity: 0.4; cursor: default; }
     <button class="primary" id="play-again-btn" style="padding:10px 28px;font-size:15px">↩ Play again</button>
   </div>
 </div>
-
 <script>
 // ============================================================
 // MULTIPLAYER WEBSOCKET CONNECTION
@@ -229,89 +223,81 @@ button:disabled { opacity: 0.4; cursor: default; }
 let ws = null;
 let playerId = null;
 let myPlayerIndex = null;
-
 function connectToServer() {
   const host = window.location.hostname;
   const port = window.location.port || '3000';
   const wsUrl = `ws://${host}:${port}`;
-  
+
   console.log(`🔗 Connecting to ${wsUrl}`);
   ws = new WebSocket(wsUrl);
-  
+
   ws.onopen = () => {
     console.log('✅ Connected to server');
     const playerName = document.getElementById('pname-0')?.value || 'Player 1';
     ws.send(JSON.stringify({ type: 'join', roomId: 'default', playerName }));
   };
-  
+
   ws.onmessage = (event) => {
     const msg = JSON.parse(event.data);
-    
+
     if (msg.type === 'init') {
       playerId = msg.playerId;
       console.log('Player ID:', playerId);
     }
-    
+
     if (msg.type === 'playerJoined') {
       console.log('Players in game:', msg.players);
       setEvent('🎮 Multiplayer', msg.players.length + ' players connected!');
     }
-    
+
     if (msg.type === 'gameStateSync') {
       // Another player's game state — update your board view
       syncRemoteGameState(msg.data);
     }
-    
+
     if (msg.type === 'playerLeft') {
       console.log('Players remaining:', msg.players);
       setEvent('⚠️ Player Disconnected', msg.players.length + ' players left');
     }
   };
-  
+
   ws.onerror = (err) => console.error('❌ WebSocket error:', err);
   ws.onclose = () => console.log('🔌 Disconnected from server');
 }
-
 function syncGameState() {
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ type: 'gameStateUpdate', data: G }));
   }
 }
-
 function syncRemoteGameState(remoteG) {
   if (!remoteG) return;
-  
+
   // 1. Sync all core game variables
   if (remoteG.players) G.players = remoteG.players;
   if (remoteG.cur !== undefined) G.cur = remoteG.cur;
   if (remoteG.month) G.month = remoteG.month;
   if (remoteG.jackpot !== undefined) G.jackpot = remoteG.jackpot;
   if (remoteG.log) G.log = remoteG.log;
-
   // 2. Visually update the board and players
   renderPlayers();
   placePieces();
-  
+
   // 3. Visually update the log panel
-  document.getElementById('log').innerHTML = G.log.slice(0,8).map(e => 
+  document.getElementById('log').innerHTML = G.log.slice(0,8).map(e =>
     `<div class="log-entry ${e.type||''}">${e.msg}</div>`
   ).join('');
-
   // 4. Update the text UI, but pass "true" to prevent an infinite WebSocket loop
   updateInfo(true);
 }
-
 // ============================================================
 const COLORS=['#1a5fb4','#c01c28','#2e7d32','#a020a0'];
 const COLOR_NAMES=['Blue','Red','Green','Purple'];
-
 function showScreen(name){
   ['setup-screen','game-screen','winner-screen'].forEach(id=>{
     document.getElementById(id).style.display=(id===name)?'block':'none';
   });
   window.scrollTo(0,0);
 }
-
 function goToSetup(){
   document.getElementById('num-players').value='2';
   document.getElementById('months-sel').value='3';
@@ -319,7 +305,6 @@ function goToSetup(){
   showScreen('setup-screen');
   checkForSave();
 }
-
 function makeMeeple(color, size){
   size = size || 20;
   return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -330,22 +315,18 @@ function makeMeeple(color, size){
     <circle cx="10" cy="4" r="3.2" fill="none" stroke="white" stroke-width="0.8" opacity="0.5"/>
   </svg>`;
 }
-
-
 // ============================================================
 // SOUND SYSTEM v3 — Creative redesign
 // ============================================================
 const AC = new (window.AudioContext || window.webkitAudioContext)();
 let G_MUTED = false;
 function resumeAC(){ if(AC.state==='suspended') AC.resume(); }
-
 function makeGain(vol, t){
   const g = AC.createGain();
   g.gain.setValueAtTime(vol, t);
   g.connect(AC.destination);
   return g;
 }
-
 function sine(freq, t, dur, vol, slide){
   const o = AC.createOscillator(); const g = makeGain(vol, t);
   o.type='sine'; o.frequency.setValueAtTime(freq, t);
@@ -353,7 +334,6 @@ function sine(freq, t, dur, vol, slide){
   g.gain.exponentialRampToValueAtTime(0.001, t+dur);
   o.connect(g); o.start(t); o.stop(t+dur);
 }
-
 function tri(freq, t, dur, vol, slide){
   const o = AC.createOscillator(); const g = makeGain(vol, t);
   o.type='triangle'; o.frequency.setValueAtTime(freq, t);
@@ -361,7 +341,6 @@ function tri(freq, t, dur, vol, slide){
   g.gain.exponentialRampToValueAtTime(0.001, t+dur);
   o.connect(g); o.start(t); o.stop(t+dur);
 }
-
 function saw(freq, t, dur, vol, slide){
   const o = AC.createOscillator(); const g = makeGain(vol, t);
   o.type='sawtooth'; o.frequency.setValueAtTime(freq, t);
@@ -369,14 +348,12 @@ function saw(freq, t, dur, vol, slide){
   g.gain.exponentialRampToValueAtTime(0.001, t+dur);
   o.connect(g); o.start(t); o.stop(t+dur);
 }
-
 function sq(freq, t, dur, vol){
   const o = AC.createOscillator(); const g = makeGain(vol, t);
   o.type='square'; o.frequency.setValueAtTime(freq, t);
   g.gain.exponentialRampToValueAtTime(0.001, t+dur);
   o.connect(g); o.start(t); o.stop(t+dur);
 }
-
 // Filtered noise burst — the key to natural sounds
 function bang(t, dur, vol, freq, q){
   const sr = AC.sampleRate;
@@ -392,7 +369,6 @@ function bang(t, dur, vol, freq, q){
   g.gain.exponentialRampToValueAtTime(0.001, t+dur);
   src.start(t); src.stop(t+dur);
 }
-
 function thud(t, vol){
   // Low frequency punch — good for impacts
   const o = AC.createOscillator(); const g = makeGain(vol||0.5, t);
@@ -402,16 +378,13 @@ function thud(t, vol){
   o.connect(g); o.start(t); o.stop(t+0.2);
   bang(t, 0.06, (vol||0.5)*0.4, 200, 0.5);
 }
-
 function ding(freq, t, vol){
   // Clean bell-like tone with natural decay
   sine(freq, t, 1.2, vol||0.3);
   sine(freq*2.756, t, 0.6, (vol||0.3)*0.3); // inharmonic partial = bell character
   sine(freq*5.404, t, 0.3, (vol||0.3)*0.1);
 }
-
 const _SFX_RAW = {
-
   diceRoll: ()=>{
     resumeAC();
     const t = AC.currentTime;
@@ -426,13 +399,11 @@ const _SFX_RAW = {
     // Final settle — soft roll-out
     bang(t+0.25, 0.04, 0.08, 1500, 2);
   },
-
   step: ()=>{
     resumeAC();
     const t = AC.currentTime;
     thud(t, 0.18);
   },
-
   chaChing: ()=>{
     resumeAC();
     const t = AC.currentTime;
@@ -446,7 +417,6 @@ const _SFX_RAW = {
       ding(1200+i*150, t+d, 0.15);
     });
   },
-
   coinClink: ()=>{
     resumeAC();
     const t = AC.currentTime;
@@ -457,7 +427,6 @@ const _SFX_RAW = {
       bang(t+d, 0.02, 0.1, freq*0.8, 4);
     });
   },
-
   mailWhoosh: ()=>{
     resumeAC();
     const t = AC.currentTime;
@@ -467,7 +436,6 @@ const _SFX_RAW = {
     // Soft thud as it lands
     thud(t+0.1, 0.15);
   },
-
   dealStamp: ()=>{
     resumeAC();
     const t = AC.currentTime;
@@ -479,7 +447,6 @@ const _SFX_RAW = {
     // Slight rebound
     thud(t+0.09, 0.12);
   },
-
   buyerChime: ()=>{
     resumeAC();
     const t = AC.currentTime;
@@ -488,7 +455,6 @@ const _SFX_RAW = {
       ding(f, t+d, 0.25);
     });
   },
-
   lotterySpinStart: ()=>{
     resumeAC();
     const t = AC.currentTime;
@@ -496,7 +462,6 @@ const _SFX_RAW = {
     bang(t, 0.02, 0.25, 1800, 5);
     tri(200, t, 0.03, 0.1);
   },
-
   lotteryWin: ()=>{
     resumeAC();
     const t = AC.currentTime;
@@ -516,7 +481,6 @@ const _SFX_RAW = {
     // Final big chord
     [523,659,784,1047,1319].forEach(f=>sine(f,t+1.55,0.7,0.12));
   },
-
   lotteryLose: ()=>{
     resumeAC();
     const t = AC.currentTime;
@@ -529,7 +493,6 @@ const _SFX_RAW = {
       sine(f*1.01, t+d+0.05, dur-0.05, 0.06);
     });
   },
-
   sweepstakes: ()=>{
     resumeAC();
     const t = AC.currentTime;
@@ -543,7 +506,6 @@ const _SFX_RAW = {
     // Warm landing chord
     [523,659,784].forEach(f=>sine(f,t+0.75,0.5,0.1));
   },
-
   casinoDice: ()=>{
     resumeAC();
     const t = AC.currentTime;
@@ -557,7 +519,6 @@ const _SFX_RAW = {
       ding(1100+Math.random()*300, t+d, 0.1);
     });
   },
-
   church: ()=>{
     resumeAC();
     const t = AC.currentTime;
@@ -573,7 +534,6 @@ const _SFX_RAW = {
     sine(65, t, 3.0, 0.18);
     sine(98, t+0.1, 2.8, 0.1);
   },
-
   lose: ()=>{
     resumeAC();
     const t = AC.currentTime;
@@ -583,7 +543,6 @@ const _SFX_RAW = {
     sine(200, t+0.08, 0.3, 0.1, 60);
     bang(t, 0.08, 0.2, 150, 0.8);
   },
-
   cedarPoint: ()=>{
     resumeAC();
     const t = AC.currentTime;
@@ -601,7 +560,6 @@ const _SFX_RAW = {
     thud(t+0.95, 0.4);
     bang(t+0.95, 0.1, 0.3, 500, 1);
   },
-
   dieLand: ()=>{
     resumeAC();
     const t=AC.currentTime;
@@ -610,7 +568,6 @@ const _SFX_RAW = {
     tri(180, t, 0.06, 0.15);
     bang(t+0.02, 0.03, 0.15, 600, 3);
   },
-
   traderJoes: ()=>{
     resumeAC();
     const t = AC.currentTime;
@@ -622,7 +579,6 @@ const _SFX_RAW = {
     // Little cart squeak in the middle
     sine(1200, t+0.42, 0.05, 0.06, 900);
   },
-
   payday: ()=>{
     resumeAC();
     const t = AC.currentTime;
@@ -649,7 +605,6 @@ const _SFX_RAW = {
     }
   },
 };
-
 // Mute-aware proxy
 const SFX = new Proxy(_SFX_RAW, {
   get(target, prop){
@@ -691,7 +646,6 @@ const SPACES=[
   {id:30, type:'freebie',    label:'Won Bass Lake fishing bet — collect $120', icon:'🎣', effect:'found',    amount:120,  desc:'You hustled your buddies at Deep Springs Trout Club. Collect $120!'},
   {id:31, type:'payday',     label:'PAY DAY!',                            icon:'💵'},
 ];
-
 const DEAL_CARDS=[
   {name:'Concert Tickets',buy:250,sell:550},{name:'Sports Memorabilia',buy:350,sell:800},
   {name:'Antique Chair',buy:175,sell:450},{name:'Comic Books',buy:80,sell:300},
@@ -721,10 +675,8 @@ const MAIL_CARDS=[
   {text:'Pioneer Waterland family day — pay $220',amount:-220},
   {text:'Punderson State Park camping trip! Collect $100 back on reservation',amount:100},
 ];
-
 let G={};
 function fmt(n){return '$'+Math.abs(n).toLocaleString();}
-
 function initGame(){
   const np=parseInt(document.getElementById('num-players').value);
   const months=parseInt(document.getElementById('months-sel').value);
@@ -742,7 +694,6 @@ function initGame(){
   renderBoard(); renderPlayers(); updateInfo();
   setEvent(G.players[0].name+"'s turn",'Tap Roll to move.');
 }
-
 function renderBoard(){
   const board=document.getElementById('board');
   board.innerHTML='';
@@ -756,7 +707,6 @@ function renderBoard(){
   });
   placePieces();
 }
-
 function placePieces(){
   const byPos={};
   G.players.forEach(p=>{if(!byPos[p.pos])byPos[p.pos]=[];byPos[p.pos].push(p);});
@@ -775,35 +725,83 @@ function placePieces(){
   });
 }
 function removePieces(){document.querySelectorAll('[id^="pieces-"]').forEach(el=>el.innerHTML='');}
-
 function renderPlayers(){
   const sec=document.getElementById('players-section'); sec.innerHTML='';
   G.players.forEach((p,i)=>{
     const chip=document.createElement('div');
     chip.className='player-chip'+(i===G.cur?' active':'');
     chip.style.borderColor=p.color; chip.style.color=p.color;
+
+    // Highlight the chip if it belongs to this local client
+    if (myPlayerIndex === i) {
+      chip.style.background = '#f0f8ff';
+    }
+    // Add pointer cursor and tooltip if they haven't claimed a player yet
+    chip.style.cursor = myPlayerIndex === null ? 'pointer' : 'default';
+    if (myPlayerIndex === null) chip.title = "Click to claim this player!";
     chip.innerHTML=makeMeeple(p.color,22)+`<span>${p.name}</span>`;
+
+    // Claiming logic
+    chip.addEventListener('click', () => {
+      if (myPlayerIndex === null) {
+        myPlayerIndex = i;
+        alert(`You are now playing as ${p.name}!`);
+        renderPlayers(); // Re-render to show the highlight
+        updateInfo();    // Re-run info to lock buttons if it's not your turn
+      }
+    });
     sec.appendChild(chip);
   });
 }
-
 function updateInfo(preventSync = false){
   const p=G.players[G.cur];
-
   document.getElementById('cur-cash').textContent=fmt(p.cash);
   const loanEl=document.getElementById('cur-loans');
   if(loanEl) loanEl.textContent=p.loans>0?'-'+fmt(p.loans):'$0';
   document.getElementById('jackpot-display').textContent=fmt(G.jackpot);
   document.getElementById('month-label').textContent='Month '+G.month+' of '+G.totalMonths;
   if(G.players) renderInventory();
-
-  // Broadcast the new state to other players, unless this update 
-  // was triggered by receiving a state from the server.
+  // Apply the UI lock based on whose turn it is
+  applyTurnLock();
+  // Broadcast the new state to other players
   if (!preventSync) {
     syncGameState();
   }
 }
-
+function applyTurnLock() {
+  // If the user hasn't claimed a player yet, don't lock anything
+  if (myPlayerIndex === null) return;
+  const isMyTurn = (G.cur === myPlayerIndex);
+  // Buttons that should ONLY be active during your turn
+  const buttonsToLock = [
+    'roll-btn', 'roll-btn-b',
+    'loan-btn', 'repay-btn',
+    'end-turn-btn',
+    'lottery-btn', 'lottery-btn-b',
+    'deal-pass-btn'
+  ];
+  buttonsToLock.forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      if (!isMyTurn) {
+        // Lock the button and dim it
+        btn.disabled = true;
+        btn.style.opacity = '0.4';
+      } else {
+        // Unlock the button (unless the dice are actively rolling)
+        if (!G.rolling) {
+          btn.disabled = false;
+          btn.style.opacity = '1';
+        }
+      }
+    }
+  });
+  // Visual status feedback in the event box
+  if (!isMyTurn && !G.rolling) {
+    document.getElementById('event-title').textContent = "⏳ Waiting for opponent...";
+    document.getElementById('event-desc').textContent = `It is currently ${G.players[G.cur].name}'s turn. Your controls are locked.`;
+  }
+}
 function addLog(msg,type){
   G.log.unshift({msg,type});
   document.getElementById('log').innerHTML=G.log.slice(0,8).map(e=>`<div class="log-entry ${e.type||''}">${e.msg}</div>`).join('');
@@ -813,7 +811,6 @@ function setEvent(title,desc){
   document.getElementById('event-desc').textContent=desc;
   hideBalance();
 }
-
 function showBalance(before, after){
   const diff = after - before;
   if(diff === 0) return;
@@ -831,14 +828,11 @@ function showBalance(before, after){
   el.offsetHeight; // reflow
   el.style.animation = 'balance-pop 0.3s ease-out';
 }
-
 function hideBalance(){
   document.getElementById('balance-change').style.display = 'none';
 }
-
 function rollDie(){return Math.floor(Math.random()*6)+1;}
 const DIE_FACES=['','1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣'];
-
 function doRoll(){
   if(G.rolling)return;
   G.rolling=true; document.getElementById('roll-btn').disabled=true;
@@ -849,7 +843,6 @@ function doRoll(){
     if(count>=8){clearInterval(interval);const roll=rollDie();const dface=DIE_FACES[roll]; document.getElementById('die1-display').textContent=dface; document.getElementById('die1-display-b').textContent=dface; SFX.dieLand(); movePlayer(roll);}
   },80);
 }
-
 function placeSinglePiece(pos, player, animClass){
   const container = document.getElementById('pieces-'+pos);
   if(!container) return;
@@ -866,26 +859,23 @@ function placeSinglePiece(pos, player, animClass){
   }
   container.appendChild(wrap);
 }
-
 function movePlayer(roll){
   const p = G.players[G.cur];
   const oldPos = p.pos;
   const finalPos = (oldPos + roll) % 32;
-  const passedPayday = finalPos <= oldPos && oldPos !== 0;
-
+  // Passed PAY DAY only if the move wraps past space 31 (and we didn't start ON it —
+  // landing on 31 collects via landOn, so leaving it shouldn't pay again)
+  const passedPayday = oldPos !== 31 && (oldPos + roll) >= 32;
   addLog(p.name+' rolled '+roll,'');
   document.getElementById('roll-btn').disabled = true;
-
   // Remove player from current space
   const startContainer = document.getElementById('pieces-'+oldPos);
   if(startContainer){
     const el = startContainer.querySelector('[data-player="'+p.idx+'"]');
     if(el) el.remove();
   }
-
   let step = oldPos;
   let stepsLeft = roll;
-
   function doStep(){
     if(stepsLeft === 0){
       // Landed — final animation
@@ -901,35 +891,28 @@ function movePlayer(roll){
     }
     step = (step + 1) % 32;
     stepsLeft--;
-
     // Remove from previous
     const prevContainer = document.getElementById('pieces-'+(((step-1)+32)%32));
     if(prevContainer){
       const el = prevContainer.querySelector('[data-player="'+p.idx+'"]');
       if(el) el.remove();
     }
-
     // Place with hop animation
     placeSinglePiece(step, p, stepsLeft === 0 ? null : 'meeple-hop');
     SFX.step();
-
     // If crossing payday mid-move, flash it
     if(step === 31 && stepsLeft > 0){
       const pd = document.getElementById('space-31');
       if(pd){ pd.classList.add('highlight-active'); setTimeout(()=>pd.classList.remove('highlight-active'),300); }
     }
-
     setTimeout(doStep, 600);
   }
-
   setTimeout(doStep, 200);
 }
-
 function doPayDay(){
   const p=G.players[G.cur];
   const _pb=p.cash;
   p.cash+=2000;
-
   // Credit card model: interest on principal at START of this month
   let interestMsg='';
   if(p.loanPrincipalAtLastPayday>0){
@@ -941,10 +924,8 @@ function doPayDay(){
     addLog('💵 '+p.name+' PAYDAY +$2,000','plus');
   }
   p.loanPrincipalAtLastPayday=p.loanPrincipal;
-
   // Mark this player as having crossed Payday this month
   p.crossedPayday=true;
-
   // Only advance month when ALL players have crossed Payday
   const allCrossed=G.players.every(pl=>pl.crossedPayday);
   if(allCrossed){
@@ -965,7 +946,6 @@ function doPayDay(){
   // Use advanceTurn() directly — Payday shouldn't require tapping End Turn
   advanceTurn();
 }
-
 function landOn(pos){
   const s=SPACES[pos]; const p=G.players[G.cur]; updateInfo();
   // Log the space landed on (skip start and payday — they have their own logs)
@@ -1037,12 +1017,7 @@ function landOn(pos){
   if(s.effect==='charity'){const _chb=p.cash; G.players.forEach(op=>op.cash-=150);addLog(p.name+' paid -$150 (everyone)','minus');setEvent('🚶 Charity Walk!','Everyone pays $150.'); showBalance(_chb,p.cash); SFX.lose();updateInfo();nextTurn();return;}
   setEvent(s.icon+' '+s.label,'Nothing special. Keep moving!');nextTurn();
 }
-
-
 // old doLotteryRoll removed
-
-
-
 function showLotteryPicker(){
   document.getElementById('lottery-picker').style.display='block';
   document.getElementById('lottery-result').style.display='none';
@@ -1053,7 +1028,6 @@ function showLotteryPicker(){
     newBtn.addEventListener('click', () => { window._lotteryRange=range; doLotteryRoll(range); });
   });
 }
-
 function hideLotteryPicker(){
   document.getElementById('lottery-picker').style.display='none';
   document.getElementById('lottery-result').style.display='none';
@@ -1065,7 +1039,6 @@ function hideLotteryPicker(){
     if(b){ b.disabled=false; b.style.opacity='1'; }
   });
 }
-
 function doLotteryRoll(range){
   const p = G.players[G.cur];
   ['low','mid','high'].forEach(r => document.getElementById('lottery-pick-'+r).disabled=true);
@@ -1078,6 +1051,7 @@ function doLotteryRoll(range){
       clearInterval(interval);
       const roll=rollDie();
       document.getElementById('die1-display').textContent=DIE_FACES[roll];
+      document.getElementById('die1-display-b').textContent=DIE_FACES[roll];
       const won=(range==='low'&&roll<=2)||(range==='mid'&&roll>=3&&roll<=4)||(range==='high'&&roll>=5);
       const resultEl=document.getElementById('lottery-result');
       resultEl.style.display='block';
@@ -1103,7 +1077,6 @@ function doLotteryRoll(range){
     }
   },80);
 }
-
 function showDealPicker(p){
   const picker = document.getElementById('deal-picker');
   const items = document.getElementById('deal-picker-items');
@@ -1135,16 +1108,9 @@ function showDealPicker(p){
   });
   picker.style.display = 'block';
 }
-
 function hideDealPicker(){
   document.getElementById('deal-picker').style.display = 'none';
 }
-
-
-
-
-
-
 function showDealOffer(p, card){
   document.getElementById('roll-btn').disabled = true;
   const details = document.getElementById('deal-offer-details');
@@ -1154,19 +1120,15 @@ function showDealOffer(p, card){
     'Sell for: <span style="color:#2e7d32;font-weight:700">'+fmt(card.sell)+'</span> &nbsp;|&nbsp; '+
     'Profit: <span style="color:#2e7d32;font-weight:700">+'+fmt(card.sell-card.buy)+'</span><br>'+
     '<span style="font-size:11px;color:#888">Your balance: '+fmt(p.cash)+' → '+fmt(p.cash-card.buy)+' after purchase</span>';
-
   const offerEl = document.getElementById('deal-offer');
   offerEl.style.display = 'block';
-
   // Wire buttons fresh each time
   const acceptBtn = document.getElementById('deal-accept-btn');
   const declineBtn = document.getElementById('deal-decline-btn');
-
   const newAccept = acceptBtn.cloneNode(true);
   const newDecline = declineBtn.cloneNode(true);
   acceptBtn.parentNode.replaceChild(newAccept, acceptBtn);
   declineBtn.parentNode.replaceChild(newDecline, declineBtn);
-
   newAccept.addEventListener('click', () => {
     const _db = p.cash;
     p.cash -= card.buy;
@@ -1178,7 +1140,6 @@ function showDealOffer(p, card){
     updateInfo();
     nextTurn();
   });
-
   newDecline.addEventListener('click', () => {
     addLog(p.name+' declined the '+card.name+' deal','');
     setEvent('📋 Deal declined','You passed on '+card.name+'. Maybe next time!');
@@ -1187,12 +1148,10 @@ function showDealOffer(p, card){
     nextTurn();
   });
 }
-
 function hideDealOffer(){
   document.getElementById('deal-offer').style.display = 'none';
   document.getElementById('roll-btn').disabled = false;
 }
-
 function renderInventory(){
   const items = document.getElementById('inventory-items');
   // Show ALL players' deals grouped
@@ -1208,10 +1167,7 @@ function renderInventory(){
   if(!html) html = '<span class="inventory-empty">No deals in play yet!</span>';
   items.innerHTML = html;
 }
-
-
 const SAVE_KEY = 'payday_save_v1';
-
 function saveGame(){
   const save = {
     players: G.players.map(p=>({
@@ -1240,14 +1196,12 @@ function saveGame(){
     setEvent('❌ Save failed','Could not save — storage may be full or unavailable.');
   }
 }
-
 function loadSave(){
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch(e){ return null; }
 }
-
 function resumeGame(){
   const save = loadSave();
   if(!save) return;
@@ -1272,7 +1226,6 @@ function resumeGame(){
     .map(e=>`<div class="log-entry ${e.type||''}">${e.msg}</div>`).join('');
   setEvent(G.players[G.cur].name+"'s turn",'Game resumed! Tap Roll to continue.');
 }
-
 function deleteSave(){
   localStorage.removeItem(SAVE_KEY);
   const bar = document.getElementById('resume-bar');
@@ -1283,7 +1236,6 @@ function deleteSave(){
     setEvent('🗑 Save deleted','Saved game has been cleared.');
   }
 }
-
 function checkForSave(){
   const save = loadSave();
   const bar = document.getElementById('resume-bar');
@@ -1296,22 +1248,17 @@ function checkForSave(){
     bar.style.display='none';
   }
 }
-
-
 const HS_KEY = 'payday_highscores_v1';
 const MEDALS = ['🥇','🥈','🥉'];
-
 function loadHighScores(){
   try {
     const raw = localStorage.getItem(HS_KEY);
     return raw ? JSON.parse(raw) : [];
   } catch(e){ return []; }
 }
-
 function saveHighScores(scores){
   try { localStorage.setItem(HS_KEY, JSON.stringify(scores)); } catch(e){}
 }
-
 function checkHighScore(name, cash){
   const scores = loadHighScores();
   // Check if this score makes top 3
@@ -1335,7 +1282,6 @@ function checkHighScore(name, cash){
   saveHighScores(top3);
   return true;
 }
-
 function renderHighScores(){
   const scores = loadHighScores();
   const list = document.getElementById('highscores-list');
@@ -1354,7 +1300,6 @@ function renderHighScores(){
       <div style="font-size:18px;font-weight:700;color:#2e7d32">${fmt(s.cash)}</div>
     </div>`).join('');
 }
-
 function toggleHighScores(){
   const panel = document.getElementById('highscores-panel');
   if(!panel) return;
@@ -1362,24 +1307,20 @@ function toggleHighScores(){
   panel.style.display = showing ? 'none' : 'block';
   if(!showing) renderHighScores();
 }
-
 function showEndTurn(){
   document.getElementById('end-turn-bar').style.display='block';
   document.getElementById('roll-btn').disabled=true;
   document.getElementById('roll-btn-b').disabled=true;
-
 }
-
 function hideEndTurn(){
   document.getElementById('end-turn-bar').style.display='none';
 }
-
 function advanceTurn(){
   hideEndTurn();
   G.rolling=false;
   G.cur=(G.cur+1)%G.players.length;
   const p=G.players[G.cur];
-  
+
   if(p.skipTurn){
     p.skipTurn=false;
     addLog(p.name+' skips turn (resting)','');
@@ -1391,19 +1332,17 @@ function advanceTurn(){
     syncGameState();
     return;
   }
-  
+
   renderPlayers(); updateInfo();
   document.getElementById('roll-btn').disabled=false; document.getElementById('roll-btn-b').disabled=false;
   setEvent(p.name+"'s turn",'Tap Roll to move.');
-  
+
   syncGameState();
 }
-
 function nextTurn(){
   G.rolling=false;
   showEndTurn();
 }
-
 function endGame(){
   G.players.forEach(p=>{
     if(p.loans>0){
@@ -1427,7 +1366,6 @@ function endGame(){
       <div style="font-size:18px;font-weight:600;color:${p.cash>=0?'#2e7d32':'#c01c28'}">${fmt(p.cash)}</div>
     </div>`).join('');
 }
-
 function setupNameInputs(){
   const n=parseInt(document.getElementById('num-players').value);
   const c=document.getElementById('name-inputs'); c.innerHTML='';
@@ -1442,17 +1380,15 @@ function setupNameInputs(){
     c.appendChild(wrap);
   }
 }
-
 function wire(id, fn){
   const el = document.getElementById(id);
   if(el) el.addEventListener('click', fn);
 }
-
-wire('num-players', setupNameInputs);
 document.getElementById('num-players').addEventListener('change', setupNameInputs);
 wire('start-btn', initGame);
 wire('roll-btn', doRoll);
 wire('roll-btn-b', doRoll);
+wire('lottery-btn', ()=>{ doLotteryRoll(window._lotteryRange||'low'); });
 wire('lottery-btn-b', ()=>{ doLotteryRoll(window._lotteryRange||'low'); });
 wire('loan-btn', ()=>{
   const p=G.players[G.cur];
@@ -1512,7 +1448,6 @@ wire('log-toggle-btn', ()=>{
   btn.style.borderRadius = open ? '8px' : '8px 8px 0 0';
 });
 wire('highscores-btn', toggleHighScores);
-
 setupNameInputs();
 checkForSave();
 renderHighScores();
