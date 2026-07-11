@@ -866,6 +866,18 @@ function applyTurnLock() {
   }
 }
 
+function addLog(msg,type){
+  G.log.unshift({msg,type});
+  document.getElementById('log').innerHTML=G.log.slice(0,8).map(e=>`<div class="log-entry ${e.type||''}">${e.msg}</div>`).join('');
+}
+
+  // Visual status feedback in the event box
+  if (!isMyTurn && !G.rolling) {
+    document.getElementById('event-title').textContent = "⏳ Waiting for opponent...";
+    document.getElementById('event-desc').textContent = `It is currently ${G.players[G.cur].name}'s turn. Your controls are locked.`;
+  }
+}
+
   buttonsToLock.forEach(id => {
     const btn = document.getElementById(id);
     if (btn) {
