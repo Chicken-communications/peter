@@ -776,15 +776,13 @@ function placePieces(){
 }
 function removePieces(){document.querySelectorAll('[id^="pieces-"]').forEach(el=>el.innerHTML='');}
 
-function renderPlayers() {
-  const sec = document.getElementById('players-section');
-  sec.innerHTML = '';
-  G.players.forEach((p, i) => {
-    const chip = document.createElement('div');
-    chip.className = 'player-chip' + (i === G.cur ? ' active' : '');
-    chip.style.borderColor = p.color;
-    chip.style.color = p.color;
-
+function renderPlayers(){
+  const sec=document.getElementById('players-section'); sec.innerHTML='';
+  G.players.forEach((p,i)=>{
+    const chip=document.createElement('div');
+    chip.className='player-chip'+(i===G.cur?' active':'');
+    chip.style.borderColor=p.color; chip.style.color=p.color;
+    
     // Highlight the chip if it belongs to this local client
     if (myPlayerIndex === i) {
       chip.style.background = '#f0f8ff';
@@ -794,8 +792,8 @@ function renderPlayers() {
     chip.style.cursor = myPlayerIndex === null ? 'pointer' : 'default';
     if (myPlayerIndex === null) chip.title = "Click to claim this player!";
 
-    chip.innerHTML = makeMeeple(p.color, 22) + `<span>${p.name}</span>`;
-
+    chip.innerHTML=makeMeeple(p.color,22)+`<span>${p.name}</span>`;
+    
     // Claiming logic
     chip.addEventListener('click', () => {
       if (myPlayerIndex === null) {
@@ -810,15 +808,15 @@ function renderPlayers() {
   });
 }
 
-function updateInfo(preventSync = false) {
-  const p = G.players[G.cur];
+function updateInfo(preventSync = false){
+  const p=G.players[G.cur];
 
-  document.getElementById('cur-cash').textContent = fmt(p.cash);
-  const loanEl = document.getElementById('cur-loans');
-  if (loanEl) loanEl.textContent = p.loans > 0 ? '-' + fmt(p.loans) : '$0';
-  document.getElementById('jackpot-display').textContent = fmt(G.jackpot);
-  document.getElementById('month-label').textContent = 'Month ' + G.month + ' of ' + G.totalMonths;
-  if (G.players) renderInventory();
+  document.getElementById('cur-cash').textContent=fmt(p.cash);
+  const loanEl=document.getElementById('cur-loans');
+  if(loanEl) loanEl.textContent=p.loans>0?'-'+fmt(p.loans):'$0';
+  document.getElementById('jackpot-display').textContent=fmt(G.jackpot);
+  document.getElementById('month-label').textContent='Month '+G.month+' of '+G.totalMonths;
+  if(G.players) renderInventory();
 
   // Apply the UI lock based on whose turn it is
   applyTurnLock();
@@ -830,12 +828,12 @@ function updateInfo(preventSync = false) {
 }
 
 function applyTurnLock() {
-  // If the user hasn't claimed a player yet, don't lock anything
+  // If the user hasn't claimed a player yet, don't lock anything (allows local pass-and-play)
   if (myPlayerIndex === null) return;
 
   const isMyTurn = (G.cur === myPlayerIndex);
 
-  // Buttons that should ONLY be active during your turn
+  // List of buttons that should ONLY be clickable by the active player
   const buttonsToLock = [
     'roll-btn', 'roll-btn-b', 
     'loan-btn', 'repay-btn', 
@@ -847,78 +845,21 @@ function applyTurnLock() {
   buttonsToLock.forEach(id => {
     const btn = document.getElementById(id);
     if (btn) {
+      // If it's not your turn, force disable the button.
+      // If it IS your turn, we leave it alone (because game logic like 
+      // the dice rolling animation might have intentionally disabled it).
       if (!isMyTurn) {
-        // Lock the button and dim it
         btn.disabled = true;
-        btn.style.opacity = '0.4';
-      } else {
-        // Unlock the button (unless the dice are actively rolling)
-        if (!G.rolling) {
-          btn.disabled = false;
-          btn.style.opacity = '1';
-        }
       }
     }
   });
-
-  // Visual status feedback in the event box
-  if (!isMyTurn && !G.rolling) {
-    document.getElementById('event-title').textContent = "⏳ Waiting for opponent...";
-    document.getElementById('event-desc').textContent = `It is currently ${G.players[G.cur].name}'s turn. Your controls are locked.`;
-  }
-}
-
-  // Visual status feedback in the event box
-  if (!isMyTurn && !G.rolling) {
-    document.getElementById('event-title').textContent = "⏳ Waiting for opponent...";
-    document.getElementById('event-desc').textContent = `It is currently ${G.players[G.cur].name}'s turn. Your controls are locked.`;
-  }
-}
-
-function applyTurnLock() {
-  // If the user hasn't claimed a player yet, don't lock anything
-  if (myPlayerIndex === null) return;
-
-  const isMyTurn = (G.cur === myPlayerIndex);
-
-  // Buttons that should ONLY be active during your turn
-  const buttonsToLock = [
-    'roll-btn', 'roll-btn-b', 
-    'loan-btn', 'repay-btn', 
-    'end-turn-btn',
-    'lottery-btn', 'lottery-btn-b', 
-    'deal-pass-btn'
-  ];
-
-  buttonsToLock.forEach(id => {
-    const btn = document.getElementById(id);
-    if (btn) {
-      if (!isMyTurn) {
-        // Lock the button and dim it
-        btn.disabled = true;
-        btn.style.opacity = '0.4';
-      } else {
-        // Unlock the button (unless the dice are actively rolling)
-        if (!G.rolling) {
-          btn.disabled = false;
-          btn.style.opacity = '1';
-        }
-      }
-    }
-  });
-
-  // Visual status feedback in the event box
-  if (!isMyTurn && !G.rolling) {
-    document.getElementById('event-title').textContent = "⏳ Waiting for opponent...";
-    document.getElementById('event-desc').textContent = `It is currently ${G.players[G.cur].name}'s turn. Your controls are locked.`;
-  }
-}
 
   // Change the event text so the player knows they are waiting
   if (!isMyTurn && !G.rolling) {
     document.getElementById('event-title').textContent = "Waiting...";
     document.getElementById('event-desc').textContent = "It is " + G.players[G.cur].name + "'s turn.";
   }
+}
 
 function addLog(msg,type){
   G.log.unshift({msg,type});
